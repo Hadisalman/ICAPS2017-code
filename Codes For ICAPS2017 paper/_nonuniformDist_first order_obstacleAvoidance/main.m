@@ -3,6 +3,7 @@
 %% This codes prevents agent-agent collisions.(dynamic-obstacle avoidance)
 %%JUST CLICK RUN! MAKE SURE YOU DON'T START IN AN OBSTACLE REGION
 %% Setting domain bounds
+clear all; close all;
 DomainBounds.xmin = 0.0;
 DomainBounds.xmax = 1.0;
 DomainBounds.ymin = 0.0;
@@ -19,7 +20,7 @@ obstacles.number = numel(obstacles.r);
 
 % Number of wave-numbers to be used
 Nk = 50;%%
-
+livePlot = true; %set <true> if you want live plot for trajectories, other <false> for faster execution
 %% Calculating muk
 res = 100;% resolution of discretization
 xdel=Lx/res;
@@ -106,19 +107,9 @@ for iagent = 1:Nagents
 end
 % Executing multiple steps of SMC algorithm
 Ergodicity_Metric_save=zeros(Nsteps,1);
-traj = zeros(5000,Nagents,2);
-pause
-for it = 1:5000
-    if(it==1)
-        saveas(gcf,'start.fig')
-    end
-    if(it==2500)
-        saveas(gcf,'mid.fig')
-    end
-    if(it==5000)
-        saveas(gcf,'end.fig')
-    end
+traj = zeros(Nsteps,Nagents,2);
 
+for it = 1:Nsteps
     time = it * dt;
     [posagents, Ck] = SMC_Update(posagents, Ck, muk, time, dt, DomainBounds, AgentSpeed,obstacles);
     traj(it,:,:) = posagents;
@@ -126,36 +117,23 @@ for it = 1:5000
     for iagent = 1:Nagents
         set(h_traj(iagent),'XData',traj(1:it,iagent,1),'YData',traj(1:it,iagent,2))
         set(h_scatter(iagent),'XData',posagents(iagent, 1),'YData',posagents(iagent, 2))
-%         if it ~= 1
-%             h(iagent).Visible = 'off';
-%         end
-%         h(iagent) = scatter(posagents(iagent, 1), posagents(iagent, 2),colors(iagent),'fill');
-%         pause(0.001)
+        if livePlot == true
+                pause(0.001)
+        end
     end
-    drawnow
-%     F(it) = getframe;
-    it
+    if mod(it,100)==0
+       fprintf('Iteration: %i/%i  \n', it,Nsteps) 
+    end
+
     [Ergodicity_Metric] = Calculate_Ergodicity(Ck/Nagents/time, muk,DomainBounds);
     Ergodicity_Metric_save(it)=Ergodicity_Metric;
 
 end
-%  F1=F(1:2500);
-%  F2=F(2501:5000);
-%  save('data.mat','F1','F2','Ergodicity_Metric_save','Nsteps');
-%%
-%  load('data.mat')
-% F=[F1,F2];
-%  movie(figure,F(5000),1,400);
 
-%%
-%  movie2avi(F(1:2500),'DynamicMultipleObstacles_ErgodicCoverage_NEW.avi','fps',100);
-%%
-% close all
+%% Plotting the metric of ergodicity
 time=0:0.001:0.001*(Nsteps);
-% figure;plot(time(2:end),Ergodicity_Metric_save(2:end))
 figure;loglog(time(2:end),Ergodicity_Metric_save(1:end))
 axis([0.001 5 0.0001,1])
 xlabel('Time');
 ylabel('Coverage Metric, \phi(t)');
-% figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
-% figure;plot(time(2:end),Ergodicity_Metric_save(2)./Ergodicity_Metric_save(2:end))
+title('Metric of ergodicity as a function of time')

@@ -19,15 +19,6 @@ xdel=Lx/res;
 ydel=Ly/res;
 
 mu=ones(res,res);
-% for xRange=0:xdel:Lx-xdel
-%          for yRange=0:ydel:Ly-ydel
-%             for i=1:obstacles.number
-%                 if (xRange-obstacles.p(1,i))^2 + (yRange-obstacles.p(2,i))^2 <= obstacles.r(i)^2
-%                     mu(uint8(xRange*res+1),uint8(yRange*res+1)) = 0;
-%                 end
-%             end
-%          end
-% end
 
 mu=mu./sum(sum(mu));
 [X,Y]=meshgrid(1:res,1:res);
@@ -81,21 +72,7 @@ obstacles_pos = @(it)[[0.1*cos(2*pi*it/3000)+0.5;0.2*sin(2*pi*it/1000)+0.5], ...
 %                                                                               .....]
 obstacles.number = numel(obstacles.r);
 
-
-
-
 figure(1);hold on
-% for xRange=0:xdel:Lx-xdel
-%          for yRange=0:ydel:Ly-ydel
-%             for i=1:obstacles.number
-%                 if (xRange-obstacles.p(1,i))^2 + (yRange-obstacles.p(2,i))^2 <= obstacles.r(i)^2
-%                     scatter(xRange, yRange,2,'r','fill');
-%                 end
-%             end
-%          end
-% end
-% axis equal;
-
 
 ck_t = zeros(Nk, Nk);
 phi_squared = zeros(Nsteps,1);
@@ -104,51 +81,37 @@ s= 1.5;
 
 % Executing multiple steps of SMC algorithm
 Ergodicity_Metric_save=0;
-for it = 1:5000
+for it = 1:Nsteps
     time = it * dt;
     obstacles.p = obstacles_pos(it);
     [posagents, Ck] = SMC_Update(posagents, Ck, muk, time, dt, DomainBounds, AgentSpeed,obstacles);
     ck_t = Ck/(Nagents*time);
     for iagent = 1:Nagents
-        plot(posagents(iagent, 1), posagents(iagent, 2), 'Color', colors(iagent) , 'Marker', 'o', 'MarkerSize', 1);
-%         axis([0 1 0 1])
-%         axis equal
-%         xlim([0,1])
-%         ylim([0,1])
+%         plot(posagents(iagent, 1), posagents(iagent, 2), 'Color', colors(iagent) , 'Marker', 'o', 'MarkerSize', 1);
+        axis([0 1 0 1])
+        axis equal
+        xlim([0,1])
+        ylim([0,1])
         if it ~= 1
             h(iagent).Visible = 'off';
         end
         h(iagent) = scatter(posagents(iagent, 1), posagents(iagent, 2),colors(iagent),'fill');
-%         scatter(posagents(iagent, 1), posagents(iagent, 2),colors(iagent),'fill');        
-%         viscircles(obstacles_pos(it)',obstacles.r); 
+        viscircles(obstacles_pos(it)',obstacles.r); 
         pause(0.001)
-%         hold on
     end
-%     hold off
     
-    F(it) = getframe;
-    it
+    if mod(it,100)==0
+       fprintf('Iteration: %i/%i  \n', it,Nsteps) 
+    end
     [Ergodicity_Metric] = Calculate_Ergodicity(Ck/Nagents/time, muk,DomainBounds);
     Ergodicity_Metric_save=[Ergodicity_Metric_save,Ergodicity_Metric];
 
 end
-%  F1=F(1:2500);
-%  F2=F(2501:5000);
-%   save('data.mat','F1','F2','Ergodicity_Metric_save','Nsteps');
-%%
-%  load('data.mat')
-% F=[F1,F2];
- movie(figure,F,1,100);
 
-%%
-  movie2avi(F(2501:5000),'MOVINGMultipleObstacles_ErgodicCoverage_NEW_trajectories2.avi','fps',100);
-%%
+%% Plotting the metric of ergodicity
 close all
 time=0:0.001:0.001*(Nsteps);
-% figure;plot(time(2:end),Ergodicity_Metric_save(2:end))
 figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
 axis([0.001 5 0.0001,1])
 xlabel('Time');
 ylabel('Coverage Metric, \phi(t)');
-% figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
-% figure;plot(time(2:end),Ergodicity_Metric_save(2)./Ergodicity_Metric_save(2:end))

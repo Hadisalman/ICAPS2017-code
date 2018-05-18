@@ -1,5 +1,6 @@
 %% By: Hadi Salman
 % 11/06/2016
+clear all;  close all;
  global flag2 p limit
 limit =[];
 flag2= [0,0,0,0];% to know when to change p 
@@ -22,7 +23,7 @@ obstacles.number = numel(obstacles.r);
 
 % Number of wave-numbers to be used
 Nk = 50;%%
-
+livePlot = false; %set <true> if you want live plot for trajectories, other <false> for faster execution
 %% Calculating muk
 res = 100;% resolution of discretization
 xdel=Lx/res;
@@ -111,34 +112,23 @@ for it = 1:Nsteps
     [posagents, velagents, Ck ,Fox_old, Foy_old] = secondOrderSMC(posagents, velagents, Ck, muk, time, dt, DomainBounds, AgentForce, c, obstacles, Fox_old, Foy_old);
     for iagent = 1:Nagents
         plot(posagents(iagent, 1), posagents(iagent, 2), 'Color', colors(iagent), 'Marker', 'o', 'MarkerSize', 1);
-%         axis([0 1 0 1])
-%         axis equal
-        if it ~= 1
-            h(iagent).Visible = 'off';
+        if livePlot == true
+                pause(0.001)
         end
-        h(iagent) = scatter(posagents(iagent, 1), posagents(iagent, 2),colors(iagent),'fill');  
-%         pause(0.001)
     end
-        it
-     F(it) = getframe;
+    if mod(it,100)==0
+       fprintf('Iteration: %i/%i  \n', it,Nsteps) 
+    end
+    
      [Ergodicity_Metric] = Calculate_Ergodicity(Ck/Nagents/time, muk,DomainBounds);
      Ergodicity_Metric_save=[Ergodicity_Metric_save, Ergodicity_Metric];
 
 end
 
-% save('data.mat','Ergodicity_Metric_save','Nsteps');
-%%
- movie(figure,F(1:end),1,80);
-%%
-movie2avi(F(1:end),'multiple_Obstacles_Ergodic_Coverage.avi','fps',80)
-
-%%
-close all
+%% Plotting the metric of ergodicity 
 time=0:0.005:0.005*(Nsteps);
-% figure;plot(time(2:end),Ergodicity_Metric_save(2:end))
 figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
 axis([0.005 15 0.0001,1])
 xlabel('Time');
 ylabel('Coverage Metric, \phi(t)');
-% figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
-% figure;plot(time(2:end),Ergodicity_Metric_save(2)./Ergodicity_Metric_save(2:end))
+title('Metric of ergodicity as a function of time')

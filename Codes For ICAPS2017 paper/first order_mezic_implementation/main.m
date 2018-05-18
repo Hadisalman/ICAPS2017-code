@@ -10,12 +10,12 @@ Ly = DomainBounds.ymax - DomainBounds.ymin;
 obstacles.r = [0.1,0.05,0.08,0.05];% radii of obstacles
 obstacles.p = [[0.5;0.5],[0.2;0.3],[0.7;0.2],[0.3;0.8]];%positions of obstacles[x1 y1
 %                                                                               x2 y2
-%                                                                               .....]
+                                                                               .....]
 obstacles.number = numel(obstacles.r);
 
 % Number of wave-numbers to be used
 Nk = 50;%%
-
+livePlot = true; %set <true> if you want live plot for trajectories, other <false> for faster execution
 %% Calculating muk
 res = 100;% resolution of discretization
 mu=ones(res,res);
@@ -105,35 +105,24 @@ for it = 1:Nsteps
     ck_t = Ck/(Nagents*time);
     for iagent = 1:Nagents
         plot(posagents(iagent, 1), posagents(iagent, 2), 'Color', colors(iagent), 'Marker', 'o', 'MarkerSize', 1);
-%         pause(0.001)
-%         axis([0 1 0 1])
-%         axis equal
-%         if it ~= 1
-%             h(iagent).Visible = 'off';
-%         end
-%         h(iagent) = scatter(posagents(iagent, 1), posagents(iagent, 2),colors(iagent),'fill');
-
+        if livePlot == true
+                pause(0.001)
+        end
     end
-%     F(it) = getframe;
-    it
+    if mod(it,100)==0
+       fprintf('Iteration: %i/%i  \n', it,Nsteps) 
+    end
     
     [Ergodicity_Metric] = Calculate_Ergodicity(Ck/Nagents/time, muk,DomainBounds);
     Ergodicity_Metric_save=[Ergodicity_Metric_save,Ergodicity_Metric];
     
 end
 toc
-%  F1=F(1:2500);
-%  F2=F(2501:5000);
-%  save('data.mat','F1','F2','Ergodicity_Metric_save','Nsteps');
-
-%%
-close all
+%% Plotting the metric of ergodicity 
 time=0:0.001:0.001*Nsteps;
-%  figure;plot(time(2:end),Ergodicity_Metric_save(2:end))
 figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
 axis([0.001 5 0.0001,1])
 xlabel('Time');
 ylabel('Coverage Metric, \phi(t)');
-% figure;loglog(time(2:end),Ergodicity_Metric_save(2:end))
-% figure;plot(time(2:end),Ergodicity_Metric_save(2)./Ergodicity_Metric_save(2:end))
+title('Metric of ergodicity as a function of time')
 
